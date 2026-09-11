@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -116,6 +116,12 @@ import { WorkOrderDetail, WorkOrderListItem, WorkOrdersService } from './work-or
           <div class="ss-field">
             <label>Site</label>
             <select class="ss-control" [(ngModel)]="form.siteId" name="site" [disabled]="!!existing">
+              <!--
+                An explicit empty option, because a select whose value matches none of its
+                options renders as though the first one were chosen while the model is still
+                empty — which is how a work order got submitted with no site at all.
+              -->
+              <option value="" disabled>Choose a site</option>
               @for (site of sites.sites(); track site.id) {
                 <option [value]="site.id">{{ site.name }}</option>
               }
@@ -388,9 +394,44 @@ export class WorkOrderEditorDialog {
     return kb < 1024 ? `${Math.round(kb)} KB` : `${(kb / 1024).toFixed(1)} MB`;
   }
 
+  constructor() {
+    /*
+     * Adopt the current site once it is known.
+     *
+     * `form` is built when the dialog opens, and on a cold start — a free instance waking
+     * up, a slow connection — the site list has not come back yet, so `sites.current()` is
+     * null and the field initialises empty. Nothing corrected it afterwards, which is how a
+     * work order reached the API with an empty site. Only fills a blank, so it can never
+     * overwrite a choice the person has actually made, and never touches an existing work
+     * order, whose site is fixed.
+     */
+    effect(() => {
+      const current = this.sites.current();
+      if (!this.existing && !this.form.siteId && current) this.form.siteId = current.id;
+    });
+  }
+
   save(): void {
     if (this.busy()) return;
     this.failure.set(null);
+
+    /*
+     * Caught here rather than at the API.
+     *
+     * SiteId is a non-nullable Guid on the server, so an empty string fails JSON binding
+     * before any validator runs — and a binding failure answers 400 with an empty body.
+     * The dialog then had nothing to show but "Could not save the work order", naming
+     * neither the field nor the reason. The site can be empty legitimately: the form takes
+     * the current site once when it opens, and on a cold start the site list has not
+     * arrived yet.
+     */
+    if (!this.form.siteId) {
+      this.failure.set(this.sites.sites().length === 0
+        ? 'Sites are still loading. Give it a moment and try again.'
+        : 'Choose which site this work order is for.');
+      return;
+    }
+
     this.busy.set(true);
 
     this.service.save(this.existing?.id ?? null, {
