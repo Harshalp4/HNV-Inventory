@@ -26,7 +26,7 @@ databases:
 
 services:
   - type: web
-    name: sitestock
+    name: hnv-inventory
     runtime: docker
     # Free: sleeps after about fifteen minutes with no traffic, and the next request waits
     # roughly a minute while it wakes. Fine for a trial, wrong for a supervisor standing at
@@ -89,7 +89,7 @@ services:
       - key: Cors__Origins__0
         fromService:
           type: web
-          name: sitestock
+          name: hnv-inventory
           property: host
 
       # Where uploads land. On a free instance this is ordinary container storage and does
