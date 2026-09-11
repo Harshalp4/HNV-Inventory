@@ -58,8 +58,11 @@ builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 
 builder.Services.AddDbContext<SiteStockDbContext>((sp, options) =>
 {
+    // Normalised because a managed host supplies a postgresql:// URI and Npgsql only reads
+    // keyword/value form. See PostgresConnectionString for what the failure looks like.
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Postgres"),
+        PostgresConnectionString.Normalise(
+            builder.Configuration.GetConnectionString("Postgres") ?? string.Empty),
         npgsql => npgsql.MigrationsHistoryTable("__ef_migrations"));
 
     options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
