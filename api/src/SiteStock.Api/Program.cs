@@ -184,6 +184,31 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseCors("web");
+
+/*
+ * The built Angular app, served by the API itself.
+ *
+ * Every request the browser makes is to a relative path — /api/dashboard, never
+ * https://something/api/dashboard. One origin means no CORS on the real deployment, the
+ * service worker stays put, and there is no build-time API base URL to get wrong per
+ * environment. So both halves ship as one container.
+ *
+ * BEFORE authorization, and that ordering is load-bearing. The API sets a fallback policy
+ * of "must be signed in", and ASP.NET Core applies a fallback policy to every request that
+ * reaches the authorization middleware — including ones that match no endpoint at all,
+ * which is what a static file is. Registered after it, every script, stylesheet and image
+ * answered 401: index.html loaded and then nothing else did, so the app rendered blank
+ * while the server looked healthy.
+ *
+ * Only when the files are actually there. A container built without the web build should
+ * still start and serve the API rather than fail on a missing wwwroot.
+ */
+if (Directory.Exists(app.Environment.WebRootPath))
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -195,24 +220,6 @@ app.UseIdempotency();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-}
-
-/*
- * The built Angular app, served by the API itself.
- *
- * Every request the browser makes is to a relative path — /api/dashboard, never
- * https://something/api/dashboard. That is worth keeping: one origin means no CORS on the
- * real deployment, cookies and the service worker behave, and there is no build-time base
- * URL to get wrong per environment. So the two halves ship as one container, and the API
- * hands out index.html for anything that is not an API route or a real file.
- *
- * Only when the files are actually there. A container built without the web build should
- * still start and serve the API rather than failing on a missing wwwroot.
- */
-if (Directory.Exists(app.Environment.WebRootPath))
-{
-    app.UseDefaultFiles();
-    app.UseStaticFiles();
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", at = DateTimeOffset.UtcNow }))
