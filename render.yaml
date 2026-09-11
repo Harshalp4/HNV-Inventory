@@ -16,6 +16,13 @@ databases:
     # a dump and restore, not a switch. Take a backup before that date arrives.
     plan: free
     postgresMajorVersion: "17"
+    # Must match the web service's region.
+    #
+    # Render's internal database hostname resolves only inside one region. Left unset this
+    # defaulted to Oregon while the service ran in Singapore, and the connection died on DNS
+    # — "Name or service not known" — which reads like a wrong hostname rather than two
+    # things standing in different data centres.
+    region: singapore
 
 services:
   - type: web
@@ -25,7 +32,9 @@ services:
     # roughly a minute while it wakes. Fine for a trial, wrong for a supervisor standing at
     # a gate with a lorry — that is the reason to move to starter before real site use.
     plan: free
-    region: singapore          # The closest Render region to Kalyan; ~50ms, not ~250ms.
+    # The closest Render region to Kalyan; ~50ms, not ~250ms. The database above must name
+    # the same one — they cannot reach each other across regions.
+    region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
