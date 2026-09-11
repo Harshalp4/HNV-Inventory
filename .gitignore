@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+appsettings.*.local.json
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Editors
+.vs/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+
+# Local secrets — nothing real belongs in the repo
+*.env
+secrets.json

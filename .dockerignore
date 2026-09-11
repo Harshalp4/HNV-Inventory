@@ -1,0 +1,37 @@
+# What must not go into the build context.
+#
+# Without this the whole working tree is uploaded to the builder — node_modules alone is
+# hundreds of megabytes, and the build then reinstalls it anyway. Worse than slow: a stale
+# bin/ or obj/ from a Mac can confuse a Linux restore, and .git carries every secret that
+# has ever been committed.
+
+# Node
+**/node_modules/
+**/dist/
+**/.angular/
+**/npm-debug.log*
+
+# .NET
+**/bin/
+**/obj/
+**/*.user
+
+# Local state that has no business in an image
+**/App_Data/
+**/*.env
+**/secrets.json
+**/appsettings.*.local.json
+
+# Version control and editors
+.git/
+.gitignore
+.vs/
+.idea/
+.vscode/
+**/.DS_Store
+
+# Docs and scratch — none of it is needed to build or run
+docs/
+README.md
+*.md
+!web/README.md

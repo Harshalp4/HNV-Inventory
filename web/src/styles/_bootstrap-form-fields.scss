@@ -1,0 +1,111 @@
+/*
+  Every mat-form-field, app-wide, restyled to read as a Bootstrap .form-control:
+  https://getbootstrap.com/docs/5.3/forms/form-control/ — a plain bordered box with its
+  label as static text above it, not floating into the border.
+
+  One file, zero changes to the 35 feature files that use <mat-form-field>. The other half
+  of this is app.config.ts, where MAT_FORM_FIELD_DEFAULT_OPTIONS now sets
+  floatLabel: 'always' globally — that's what keeps every label permanently in the
+  "floated" position this file then moves above the box instead of into its outline notch.
+
+  Left alone on purpose: mat-select's panel, mat-datepicker's calendar, and Material's own
+  colours everywhere else (buttons, chips, nav). This only touches the outlined field shell,
+  because that shell is shared by every input, select and datepicker in the app — restyle it
+  once here and all three follow.
+*/
+
+.mat-mdc-form-field.mat-form-field-appearance-outline {
+  // Room for the label to sit above the box instead of inside it. 1.35em left a visible
+  // gap between the label and the field it names — they read as two things rather than one.
+  // 1.05em is the label's own height plus a hair, which is all it needs.
+  margin-top: 1.05em;
+
+  // Material draws its border as three pieces (leading / notch / trailing) so it can open a
+  // gap for a floating label. We don't want that gap — turn all three off and draw one plain
+  // border on the field itself instead.
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border: none !important;
+  }
+  // The notch is where Material clips the label while its width animates open. The actual
+  // clip is a clip-path (inset(... 1px) from the notch's own left edge), not overflow — since
+  // the label now sits to the left of that edge, permanently, the clip-path has to go too, or
+  // its first letter or two are cropped off every time.
+  .mdc-notched-outline,
+  .mdc-notched-outline__notch {
+    overflow: visible !important;
+    clip-path: none !important;
+    max-width: none;
+  }
+
+  .mdc-text-field--outlined {
+    border: 1px solid var(--ss-line);
+    border-radius: var(--ss-radius-control);
+    background: var(--ss-surface);
+    transition: border-color .12s ease, box-shadow .12s ease;
+  }
+
+  // The label stays exactly where Material already put it (absolutely positioned over the
+  // notch) — we just move that same box above the field's top edge instead of into it, so
+  // there is no jump and no second element to keep in sync.
+  // Angular Material injects this component's own CSS per-component at runtime, which can
+  // land after our global stylesheet in the document and win any tie on equal specificity —
+  // so every property here that Material also sets needs !important, not just position ones.
+  .mdc-floating-label {
+    position: absolute !important;
+    inset-block-start: 0 !important;
+    inset-inline-start: 0 !important;
+    transform: translateY(-135%) !important;
+    max-width: none !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+    font-size: var(--ss-text-sm) !important;
+    font-weight: 600 !important;
+    color: var(--ss-ink-muted) !important;
+    letter-spacing: .01em !important;
+  }
+
+  &.mat-focused .mdc-text-field--outlined {
+    border-color: var(--ss-brand);
+    box-shadow: 0 0 0 .2rem rgb(15 107 115 / 25%);
+  }
+  &.mat-focused .mdc-floating-label {
+    color: var(--ss-brand) !important;
+  }
+
+  &.mat-form-field-invalid .mdc-text-field--outlined {
+    border-color: var(--ss-rejected);
+  }
+  &.mat-form-field-invalid .mdc-floating-label {
+    color: var(--ss-rejected) !important;
+  }
+
+  &.mat-form-field-disabled .mdc-text-field--outlined {
+    background: var(--ss-surface-2);
+  }
+
+  /*
+    The hint sits tight under its field. Material gives it the leading of body text, which
+    on a narrow column — where a hint of six words wraps to two lines — costs nearly as
+    much height as the control it explains.
+  */
+  .mat-mdc-form-field-subscript-wrapper {
+    padding-top: 2px;
+    line-height: 1.3;
+  }
+  .mat-mdc-form-field-hint,
+  .mat-mdc-form-field-error { line-height: 1.3; }
+
+  /*
+    The control itself. Density sets a 44px floor that the box then draws short of, leaving
+    slack inside the field; 36px is Bootstrap's own .form-control height and the number the
+    rest of this file was written around.
+  */
+  .mat-mdc-form-field-infix {
+    min-height: 36px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}

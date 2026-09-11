@@ -1,0 +1,1007 @@
+@use '@angular/material' as mat;
+@use './styles/tokens';
+@use './styles/bootstrap-form-fields';
+@use './styles/form-controls';
+
+/*
+  Angular Material is themed from our tokens rather than the other way round. The palette
+  below is generated from the brand slate-blue; everything the app itself draws reads the
+  CSS custom properties in styles/_tokens.scss.
+*/
+html {
+  height: 100%;
+  color-scheme: light;   // light only — see _tokens.scss for why
+
+  @include mat.theme((
+    color: (
+      primary: mat.$cyan-palette,
+      tertiary: mat.$azure-palette,
+      theme-type: light,
+    ),
+    typography: (
+      plain-family: ('Inter', 'Noto Sans Devanagari', sans-serif),
+      brand-family: ('Inter', 'Noto Sans Devanagari', sans-serif),
+    ),
+    density: 0,
+  ));
+
+  // Bend Material's surface tokens onto ours so a Material component and a hand-written
+  // one cannot drift apart.
+  --mat-sys-surface: var(--ss-surface);
+  --mat-sys-background: var(--ss-ground);
+  --mat-sys-on-surface: var(--ss-ink);
+  --mat-sys-on-surface-variant: var(--ss-ink-muted);
+  --mat-sys-outline-variant: var(--ss-line);
+  --mat-sys-primary: var(--ss-brand);
+}
+
+/*
+  Material ships at its most generous density, which is right for a phone and much too big
+  for a desk: a 56px select next to a 56px number field turns a comparison table into a
+  scroll. The two densities we already switch by breakpoint now carry a Material density to
+  match, so the controls shrink with everything else rather than staying XL on their own.
+
+  Overlays (select panels, menus) are inside <body>, so a rule on <html> reaches them.
+*/
+/*
+  Below the desk breakpoint Material had no density applied at all, so every control on
+  every form stayed at its shipping size — a 56px field, a 56px select — while the rest of
+  the app had already been tightened around them. A phone needs a thumb-sized target, not a
+  56px one: -2 keeps the touch target comfortably over 44px and takes a sixth off the page.
+*/
+/*
+  A form field must not be stretched to fill its row. Once the empty hint line below is
+  collapsed, fields in a grid have different total heights, and the default `stretch`
+  pulled the short ones' outlines down to match the tall ones — "Amendment version" drew a
+  74px box around a 45px control.
+
+  `justify-content`, not `align-self`. The field is itself a flex column, so this packs the
+  control and its hint at the top and leaves the outline its natural height, whatever the
+  row does. `align-self: start` also fixed the height, but in a flex *column* — the sign-in
+  form, among others — cross-axis is the horizontal one, so it stopped every field
+  stretching to the container width and left three controls at three different widths.
+*/
+mat-form-field { justify-content: flex-start; }
+/*
+  And the lever that actually holds it: Material's wrapper is a flexible child, so it
+  absorbs whatever height the row hands the field however the field packs its children.
+  Fixed to its own size, the outline stays 35px whatever its neighbour does.
+*/
+mat-form-field .mat-mdc-text-field-wrapper { flex: none; }
+
+/*
+  A button toggle used as a form control stands the same height as one. Material sizes it
+  from its own density scale, which left it six pixels taller than the inputs beside it.
+*/
+.ss-field mat-button-toggle-group { min-height: 36px; }
+.ss-field mat-button-toggle .mat-button-toggle-button { min-height: 34px; }
+.ss-field mat-button-toggle .mat-button-toggle-label-content { line-height: 34px; }
+
+/*
+  Material reserves a line under every field for a hint or an error, whether or not one is
+  ever shown. On a form of eight fields that is 160px of nothing. The space is kept where
+  there is something to put in it and collapsed where there is not — so hints still read,
+  and a field that never had one stops paying for the possibility.
+*/
+.mat-mdc-form-field-subscript-wrapper:not(:has(.mat-mdc-form-field-hint-wrapper > *)):not(:has(mat-error)) {
+  display: none;
+}
+
+/*
+  The app's baseline density, on `html` itself rather than on a class.
+
+  It used to hang off `.ss-density-field`, which the app shell adds — so every screen
+  outside the shell had no density at all and drew Material at its shipping 56px. Sign-in
+  is the obvious one; any future route without the shell would have had the same. A default
+  belongs where it cannot be missed, and the desk breakpoint below still overrides it,
+  being the more specific selector.
+*/
+html {
+  @include mat.form-field-density(-2);
+  @include mat.input-density(-2);
+  @include mat.select-density(-2);
+  @include mat.option-density(-1);
+  @include mat.menu-density(-1);
+  @include mat.autocomplete-density(-1);
+  @include mat.datepicker-density(-1);
+  @include mat.button-density(-1);
+  @include mat.icon-button-density(-1);
+  @include mat.button-toggle-density(-1);
+  @include mat.checkbox-density(-1);
+  @include mat.list-density(-1);
+}
+
+html.ss-density-desk {
+  @include mat.form-field-density(-3);
+  @include mat.input-density(-3);
+  @include mat.select-density(-3);
+  @include mat.option-density(-2);
+  @include mat.menu-density(-2);
+  @include mat.autocomplete-density(-2);
+  @include mat.datepicker-density(-1);
+  @include mat.button-density(-1);
+  @include mat.icon-button-density(-2);
+  @include mat.button-toggle-density(-2);
+  @include mat.checkbox-density(-1);
+  @include mat.list-density(-2);
+}
+
+/*
+  A unit written after a number — "40 BAG", "8 d" — sits flush against the field's own text
+  with no gap of its own, so an empty field shows "How manyBAG" running together. Material
+  gives the suffix no padding because it assumes an icon button; ours is a word.
+*/
+.mat-mdc-form-field-text-suffix {
+  padding-left: var(--ss-space-2);
+  color: var(--ss-ink-faint);
+  font-size: var(--ss-text-xs);
+  white-space: nowrap;
+}
+.mat-mdc-form-field-text-prefix { padding-right: var(--ss-space-2); }
+
+/*
+  Spinner arrows off. They collide with a unit written after the number ("18 ▲▼ BAG"), they
+  are a two-pixel target on a phone, and a quantity is typed rather than nudged one at a time.
+*/
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { appearance: none; margin: 0; }
+input[type='number'] { appearance: textfield; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--ss-ground);
+  color: var(--ss-ink);
+  font-family: var(--ss-font);
+  font-size: var(--ss-body-size);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; line-height: 1.25; }
+
+/* Money and quantities line up in a column or finance cannot scan them. This is the
+   single most-skipped detail in systems like this. */
+.ss-num,
+.mat-mdc-table .ss-num,
+th.ss-num, td.ss-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  text-align: right;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ss-brand);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Never fewer than 44px of tappable area on anything a supervisor uses. */
+.ss-touch { min-height: var(--ss-touch-target); min-width: var(--ss-touch-target); }
+
+/* A phone at a site gate is the primary device, so these are not exceptions — they are
+   the default the desktop happens to widen. */
+@media (max-width: 640px) {
+  /* Every dialog becomes a full-height sheet. A centred 400px card on a 390px screen
+     leaves a useless 12px gutter and pushes the actions under the keyboard. */
+  .cdk-overlay-pane.mat-mdc-dialog-panel {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .mat-mdc-dialog-content {
+    max-height: none !important;
+    flex: 1;
+  }
+  /* Dialog actions sit above the home indicator, not under it. */
+  .mat-mdc-dialog-actions {
+    padding-bottom: max(var(--ss-space-3), env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid var(--ss-line);
+  }
+  .mat-mdc-dialog-actions button { min-height: var(--ss-touch-target); flex: 1; }
+
+  /* The material picker shows a name, a specification and a unit on one row. */
+  .mat-mdc-autocomplete-panel { max-height: 60vh; }
+  .mat-mdc-autocomplete-panel .mat-mdc-option { min-height: 44px; line-height: 1.3; }
+  .mat-mdc-autocomplete-panel .mat-mdc-optgroup-label {
+    font-size: var(--ss-text-xs); font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--ss-ink-faint);
+    min-height: 32px; position: sticky; top: 0; z-index: 1;
+    background: var(--ss-surface);
+  }
+
+  /* Notifications are sentences, not menu labels — the panel needs room for them. */
+  .ss-notify-menu.mat-mdc-menu-panel { max-width: min(94vw, 400px) !important; }
+
+  /* Menus are easier to hit when they are not 200px wide. */
+  .mat-mdc-menu-panel { min-width: 220px !important; }
+  .mat-mdc-menu-item { min-height: var(--ss-touch-target); }
+
+  .ss-page { padding: var(--ss-space-4) var(--ss-space-3) var(--ss-space-12); }
+}
+
+/* The notification panel carries sentences, so it needs more room than a menu of labels. */
+.ss-notify-menu.mat-mdc-menu-panel { min-width: 340px; max-width: min(94vw, 420px); }
+
+
+/* Pinned action bars clear the iPhone home indicator. */
+.ss-bottom-safe { padding-bottom: max(var(--ss-space-3), env(safe-area-inset-bottom)); }
+
+/* iOS zooms the page when a focused input is under 16px. That zoom never comes back on
+   its own and it is the single most common reason a web app feels broken on an iPhone. */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+.ss-muted { color: var(--ss-ink-muted); }
+.ss-faint { color: var(--ss-ink-faint); }
+.ss-mono  { font-family: var(--ss-font-mono); }
+
+/*
+  The page uses the screen it is given. 1240px was a comfortable reading column and a waste
+  of a laptop: on a 1500px display it left 300px of nothing on either side while a list of
+  materials scrolled. Lists and tables want the width; the forms inside them get their own
+  columns rather than one very wide field, because a 1400px-wide text box is harder to fill
+  in than a 400px one, not easier.
+*/
+.ss-page {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: var(--ss-space-6) var(--ss-space-4) var(--ss-space-12);
+  /*
+    A page with a pinned action bar reserves exactly that bar's height, which the bar
+    measures and reports. Ten screens had each hard-coded 110px — wrong the moment the bar
+    stacks its buttons on a phone, which hid the last inch of every one of them.
+
+    It belongs inside this block: as a separate rule earlier in the file, the padding
+    shorthand above simply overrode it and nothing appeared to happen.
+  */
+  /*
+    The fallback is what actually has to be right: if the measurement never arrives, the
+    page must still clear the bar. 132px covers a bar on one line; the narrow-screen rule
+    below covers it stacked, which is where content was being hidden.
+  */
+  padding-bottom: calc(var(--ss-bar-height, 132px) + var(--ss-space-4));
+}
+
+/* On a phone the bar stacks its buttons, so it needs roughly twice the room reserved.
+   It has to come after the block above: same specificity, so source order decides. */
+@media (max-width: 640px) {
+  .ss-page { padding-bottom: calc(var(--ss-bar-height, 240px) + var(--ss-space-4)); }
+}
+
+.ss-card {
+  background: var(--ss-surface);
+  /* A light border and a shadow so faint it is almost a rumour. Both, not either: the border
+     holds the edge, the shadow stops the card from looking printed onto the page. */
+  border: 1px solid var(--ss-g200);
+  border-radius: var(--ss-radius-card);
+  box-shadow: var(--ss-elevation);
+}
+
+/*
+ * An icon tile: a rounded square of wash with a saturated icon sitting in it.
+ *
+ * This is the single biggest reason the app read as plain. Colour here is used semantically
+ * and nowhere else — which is correct for a *status*, and wrong as a whole visual language,
+ * because it leaves every heading, every empty state and every card corner grey. A tile
+ * carries the section's own colour without ever claiming something has been approved or
+ * rejected, so the screen gains colour and the status vocabulary keeps its meaning intact.
+ */
+.ss-tile {
+  flex: none; display: grid; place-items: center;
+  width: 38px; height: 38px; border-radius: var(--ss-radius-tile);
+  background: var(--ss-tile-wash, var(--ss-brand-wash));
+  color: var(--ss-tile-ink, var(--ss-brand));
+}
+.ss-tile .material-icons-outlined,
+.ss-tile mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+.ss-tile.lg { width: 46px; height: 46px; }
+.ss-tile.lg .material-icons-outlined,
+.ss-tile.lg mat-icon { font-size: 24px; width: 24px; height: 24px; }
+
+.ss-tile.sm { width: 30px; height: 30px; border-radius: 8px; }
+.ss-tile.sm .material-icons-outlined,
+.ss-tile.sm mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+/* Tones. Named for what they are about, not for what they look like. */
+.ss-tile.buying   { --ss-tile-wash: var(--ss-tile-buying);   --ss-tile-ink: var(--ss-brand); }
+.ss-tile.material { --ss-tile-wash: var(--ss-tile-material); --ss-tile-ink: var(--ss-family-material); }
+.ss-tile.records  { --ss-tile-wash: var(--ss-tile-records);  --ss-tile-ink: var(--ss-family-records); }
+.ss-tile.reading  { --ss-tile-wash: var(--ss-tile-reading);  --ss-tile-ink: var(--ss-family-reading); }
+.ss-tile.pending  { --ss-tile-wash: var(--ss-tile-pending);  --ss-tile-ink: var(--ss-pending); }
+.ss-tile.bad      { --ss-tile-wash: var(--ss-tile-bad);      --ss-tile-ink: var(--ss-rejected); }
+.ss-tile.good     { --ss-tile-wash: var(--ss-tile-reading);  --ss-tile-ink: var(--ss-approved); }
+.ss-tile.quiet    { --ss-tile-wash: var(--ss-tile-quiet);    --ss-tile-ink: var(--ss-ink-faint); }
+
+.ss-scroll-x { overflow-x: auto; }
+/*
+ * ── the list grid ────────────────────────────────────────────────────────────
+ *
+ * One table look for every list in the app: a labelled header, ruled rows, a coloured
+ * badge that identifies the row at a glance, and columns that line up down the page.
+ *
+ * Lists had been built as a card per row, which reads well with four rows and badly with
+ * forty — nothing lines up, so comparing two orders means reading both instead of
+ * scanning a column. Global rather than per screen, because ten screens each inventing
+ * their own row is exactly how they drifted apart in the first place.
+ */
+.ss-grid-wrap {
+  background: var(--ss-surface); border: 1px solid var(--ss-line);
+  border-radius: var(--ss-radius-card); overflow: hidden;
+}
+.ss-grid-wrap > .ss-scroll-x { overflow-x: auto; }
+
+/*
+ * A side sheet: a dialog pinned to the right edge, full height.
+ *
+ * A twenty-field form in a centred box fights the screen — it is capped at the viewport
+ * height, so it scrolls inside a window that is itself floating in the middle of a page,
+ * and the list it was opened from is hidden behind a scrim doing nothing. Down the side it
+ * gets the whole height of the screen, scrolls like a page, and leaves the list in view.
+ *
+ * Applied per dialog with `panelClass: 'ss-sheet'` — short confirmations stay centred,
+ * where a box in the middle of the screen is exactly right.
+ */
+.cdk-overlay-pane.ss-sheet {
+  position: fixed !important;
+  inset: 0 0 0 auto !important;
+  max-width: min(var(--ss-sheet-width, 620px), 100vw) !important;
+  width: min(var(--ss-sheet-width, 620px), 100vw);
+  max-height: 100vh !important;
+  height: 100vh;
+}
+.ss-sheet { --mat-dialog-container-max-height: 100vh; }
+.ss-sheet .mat-mdc-dialog-surface {
+  border-radius: 0;
+  height: 100%;
+  box-shadow: -8px 0 28px rgb(20 34 38 / 18%);
+}
+.ss-sheet .mat-mdc-dialog-container { height: 100%; }
+
+/* For a sheet carrying a table rather than a column of fields. */
+.cdk-overlay-pane.ss-sheet-wide { --ss-sheet-width: 900px; }
+
+/*
+ * Deliberately not animated.
+ *
+ * A slide-in on the overlay pane sat at currentTime 0 and never advanced — the pane is
+ * created before the overlay is attached to a timeline, so the animation stuck on its first
+ * frame and left the sheet parked one full width off-screen. Material already fades the
+ * surface in; a sheet that reliably arrives beats one that sometimes never does.
+ */
+
+/* The head and the buttons stay put; only the fields between them scroll. */
+.ss-sheet .mat-mdc-dialog-content {
+  max-height: none !important;
+  flex: 1;
+  overscroll-behavior: contain;
+}
+.ss-sheet .mat-mdc-dialog-surface > * { display: flex; flex-direction: column; height: 100%; }
+
+/*
+ * The site switcher's label must be allowed to shrink.
+ *
+ * Material builds `.mdc-button__label` at runtime, so it never carries a component's scope
+ * attribute and cannot be reached from the shell's own styles. Left alone it is a block
+ * that will not shrink: a long site name made the label wider than the button holding it,
+ * and the two icons were pushed clean out of either end — one landing on the menu button,
+ * the other on the back arrow.
+ */
+.site-switch .mdc-button__label {
+  min-width: 0; overflow: hidden;
+  display: flex; align-items: center; gap: var(--ss-space-2);
+}
+
+/*
+ * The orders that make up something, opened underneath it.
+ *
+ * Used under a contract item on the work order page and under a job on the site page —
+ * the same list answering the same question in both, so it is defined once rather than
+ * drifting into two slightly different lists.
+ */
+.ss-order-lines {
+  list-style: none; margin: var(--ss-space-3) 0 0;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  background: var(--ss-surface-2); border-radius: var(--ss-radius-control);
+  display: grid; gap: 4px;
+}
+.ss-order-lines li {
+  display: flex; align-items: baseline; gap: var(--ss-space-3); flex-wrap: wrap;
+  font-size: var(--ss-text-sm);
+}
+.ss-order-lines .o-open { border: 0; background: none; padding: 0; font: inherit; cursor: pointer; }
+.ss-order-lines .o-num { font-weight: 700; color: var(--ss-brand-strong); }
+.ss-order-lines .o-open:hover .o-num { text-decoration: underline; }
+.ss-order-lines .o-sup,
+.ss-order-lines .o-when,
+.ss-order-lines .o-date { font-size: var(--ss-text-xs); color: var(--ss-ink-muted); }
+.ss-order-lines .o-val { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ss-order-lines .o-got {
+  width: 96px; text-align: right; font-size: var(--ss-text-xs);
+  color: var(--ss-approved); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.ss-order-lines .o-got.none { color: var(--ss-ink-faint); font-weight: 400; }
+
+/* A count that opens what it counts. */
+.ss-disclose {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 1px var(--ss-space-2) 1px 2px; border: 1px solid var(--ss-line);
+  border-radius: var(--ss-radius-pill); background: var(--ss-surface);
+  color: var(--ss-brand-strong); font: inherit; font-size: var(--ss-text-xs);
+  font-weight: 700; cursor: pointer;
+}
+.ss-disclose:hover { border-color: var(--ss-brand); background: var(--ss-brand-wash); }
+.ss-disclose .material-icons-outlined,
+.ss-disclose mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+/*
+ * ── drawing the eye ──────────────────────────────────────────────────────────
+ *
+ * Motion reserved for two things only: something is late, or something is sitting waiting
+ * for a person to act. Used on anything else it becomes wallpaper, and then it cannot do
+ * its job on the two things that matter.
+ *
+ * Slow and small on purpose — a two-second breath, not a blink. This screen is open all
+ * day beside somebody trying to work.
+ */
+@keyframes ss-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+@keyframes ss-nudge {
+  0%, 88%, 100% { transform: translateY(0); }
+  93% { transform: translateY(-2px); }
+}
+
+/* A ring that swells and fades out of a badge or a count. */
+.ss-pulse {
+  --pulse: color-mix(in srgb, var(--ss-rejected) 45%, transparent);
+  animation: ss-breathe 2.4s ease-out infinite;
+}
+.ss-pulse-wait { --pulse: color-mix(in srgb, var(--ss-pending) 45%, transparent); }
+/* Late is not the same as merely waiting, so it breathes at roughly twice the rate. */
+.ss-pulse-fast { animation-duration: 1.3s; }
+
+/* For an icon rather than a badge: it lifts, briefly, every few seconds. */
+.ss-nudge { animation: ss-nudge 4s ease-in-out infinite; }
+
+/*
+ * Arrival: something new has just landed.
+ *
+ * A steady pulse is good at saying "this is still here" and hopeless at saying "this just
+ * changed" — after a minute the eye stops seeing it. So a count that goes up gets one
+ * short, unmistakable moment: the badge swells and a ring runs out from under it, three
+ * times, and then it stops for good. Motion that never stops is wallpaper; motion that
+ * stops is a message.
+ */
+@keyframes ss-arrive-pop {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.45); }
+  60% { transform: scale(.92); }
+}
+@keyframes ss-arrive-ring {
+  0% { opacity: .55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+.ss-arrive { animation: ss-arrive-pop .7s cubic-bezier(.3, 1.4, .5, 1) 3; }
+.ss-arrive::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  /* A hollow ring, not a filled disc: filled, it washes over the icon it is drawing
+     attention to, so for half a second you cannot read the thing you just looked at. */
+  border: 2px solid currentcolor;
+  animation: ss-arrive-ring .9s ease-out 3;
+  pointer-events: none;
+}
+
+/* And the icon it belongs to leans over, once, so the eye is pulled to the right corner. */
+@keyframes ss-arrive-tilt {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); }
+  45% { transform: rotate(11deg); }
+  70% { transform: rotate(-5deg); }
+}
+.ss-arrive-icon { animation: ss-arrive-tilt .8s ease-in-out 3; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-arrive, .ss-arrive-icon { animation: none; }
+  .ss-arrive::after { animation: none; opacity: 0; }
+}
+
+/*
+ * Anybody who has asked their system not to animate gets no animation. This is a
+ * preference about discomfort, not decoration, so it is obeyed exactly.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ss-pulse, .ss-nudge { animation: none; }
+  /* The ring still shows, it simply stops moving — the emphasis must not be lost. */
+  .ss-pulse { box-shadow: 0 0 0 3px var(--pulse); }
+}
+
+table.ss-grid { width: 100%; border-collapse: collapse; }
+
+table.ss-grid thead th {
+  padding: var(--ss-space-3) var(--ss-space-4);
+  background: var(--ss-g100); border-bottom: 1px solid var(--ss-g200);
+  text-align: left; white-space: nowrap;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ss-g500);
+}
+
+/*
+ * Dashed rules between rows.
+ *
+ * A solid rule the full width of a wide table draws the eye along the line instead of across
+ * the row — you end up reading the grid rather than the data in it. Dashed carries the same
+ * separation at a fraction of the visual weight, which is why every dense admin table worth
+ * copying uses it.
+ */
+table.ss-grid tbody td { border-bottom: 1px dashed var(--ss-g300); }
+table.ss-grid tbody tr:last-child td { border-bottom: 0; }
+table.ss-grid tbody tr:hover td { background: var(--ss-g100); }
+
+/* The chevron at the end of a row that opens something. It lived inside the purchase-order
+   list's own styles, where component scoping kept it from every other list that wanted it. */
+.ss-grid .go-link { display: grid; place-items: center; color: var(--ss-g400); }
+.ss-grid tbody tr:hover .go-link { color: var(--ss-brand); }
+table.ss-grid tbody td {
+  padding: var(--ss-space-3) var(--ss-space-4);
+  border-bottom: 1px solid var(--ss-line); vertical-align: middle;
+  font-size: var(--ss-text-sm);
+}
+table.ss-grid tbody tr:last-child td { border-bottom: 0; }
+/* Banded, faintly. Enough to keep the eye on one row across a wide table, not enough to
+   read as two kinds of row. */
+table.ss-grid tbody tr:nth-child(even) { background: color-mix(in srgb, var(--ss-surface-2) 45%, #fff); }
+table.ss-grid tbody tr:hover { background: var(--ss-brand-wash); }
+
+table.ss-grid .g-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.ss-grid .g-tight { width: 1%; white-space: nowrap; }
+
+/* The row's own reference, and the thing it opens. */
+.ss-grid .g-ref { font-weight: 700; color: var(--ss-brand-strong); text-decoration: none; }
+.ss-grid .g-ref:hover { text-decoration: underline; }
+.ss-grid .g-sub { display: block; margin-top: 1px; font-size: var(--ss-text-xs); color: var(--ss-ink-muted); }
+
+/* The identity line: the reference, then the one name that matters most on the row. */
+.ss-grid .g-top { display: flex; align-items: baseline; gap: var(--ss-space-2); flex-wrap: wrap; }
+.ss-grid .g-who { font-weight: 600; font-size: var(--ss-text-sm); color: var(--ss-ink); }
+
+/* Lateness, said rather than implied. */
+.ss-grid .overdue { color: var(--ss-rejected); font-weight: 600; }
+
+/*
+ * The badge. Two letters and a colour taken from the name itself, so the same supplier is
+ * the same colour on every screen without anybody maintaining a mapping.
+ */
+.ss-grid .g-badge {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: none;
+  border-radius: var(--ss-radius-control);
+  font-size: var(--ss-text-xs); font-weight: 800; letter-spacing: .02em;
+  background: color-mix(in srgb, var(--badge, var(--ss-brand)) 14%, #fff);
+  color: var(--badge, var(--ss-brand-strong));
+}
+.ss-grid .g-badge .material-icons-outlined { font-size: 19px; }
+.ss-grid .g-cell { display: flex; align-items: center; gap: var(--ss-space-3); }
+
+/* A row that needs somebody, without adding a column to say so. */
+.ss-grid tr.g-urgent td:first-child { box-shadow: inset 3px 0 0 var(--ss-rejected); }
+.ss-grid tr.g-watch td:first-child { box-shadow: inset 3px 0 0 var(--ss-pending); }
+
+@media (max-width: 860px) {
+  table.ss-grid thead { display: none; }
+  table.ss-grid tbody tr { display: grid; gap: 2px; padding: var(--ss-space-2) 0; }
+  table.ss-grid tbody td { border: 0; padding: 2px var(--ss-space-4); }
+  table.ss-grid tbody tr { border-bottom: 1px solid var(--ss-line); }
+  table.ss-grid .g-num { text-align: left; }
+}
+
+/*
+ * Status filter chips that wear the colour of the state they filter for.
+ *
+ * Global rather than scoped to the page: the label lives inside Material's own chip
+ * template, which a component's encapsulated styles cannot reach. Without this the
+ * selected chip came out the theme's teal whichever status it filtered for — so the
+ * one chip that most needed to say which state you were looking at said nothing.
+ */
+.ss-tone-chips {
+  [data-tone='pending']   { --tone: var(--ss-pending);   --tone-wash: var(--ss-pending-wash); }
+  [data-tone='info']      { --tone: var(--ss-info);      --tone-wash: var(--ss-info-wash); }
+  [data-tone='variance']  { --tone: var(--ss-variance);  --tone-wash: var(--ss-variance-wash); }
+  [data-tone='approved']  { --tone: var(--ss-approved);  --tone-wash: var(--ss-approved-wash); }
+  [data-tone='settled']   { --tone: var(--ss-settled);   --tone-wash: var(--ss-settled-wash); }
+  [data-tone='cancelled'] { --tone: var(--ss-cancelled); --tone-wash: var(--ss-cancelled-wash); }
+
+  .mat-mdc-chip-option[data-tone] {
+    border: 1px solid var(--tone);
+    background: var(--ss-surface);
+  }
+  .mat-mdc-chip-option[data-tone] .mdc-evolution-chip__text-label { color: var(--tone); }
+
+  /* Picked: filled with its own wash, so the list below it is the same colour. */
+  .mat-mdc-chip-option[data-tone].mat-mdc-chip-selected {
+    background: var(--tone-wash);
+  }
+  .mat-mdc-chip-option[data-tone].mat-mdc-chip-selected .mdc-evolution-chip__text-label {
+    color: var(--tone);
+    font-weight: 700;
+  }
+}
+
+/*
+ * ── the filter row ───────────────────────────────────────────────────────────
+ *
+ * The app had grown three different-looking controls for one job — "show me a subset of
+ * this list". Purchase orders used Material chips, Requisitions hand-rolled buttons, and
+ * Stock, Bills, Transfers and Handovers a Material segmented toggle: one joined slab with
+ * hairlines between the segments. Two of the three were already rounded pills; the toggle
+ * was the odd one out, so it is the one that moves.
+ *
+ * Restyled rather than replaced. A segmented toggle and a row of pills are the same control
+ * to a keyboard and a screen reader — the difference is entirely paint, and repainting it
+ * reaches all eight screens at once without touching a single feature file.
+ */
+.mat-button-toggle-group {
+  --mat-standard-button-toggle-shape: var(--ss-radius-pill);
+  gap: var(--ss-space-2);
+  border: 0 !important;
+  background: none !important;
+  overflow: visible;
+}
+
+.mat-button-toggle {
+  border: 1px solid var(--ss-line) !important;
+  border-radius: var(--ss-radius-pill) !important;
+  background: var(--ss-surface);
+  color: var(--ss-ink-muted);
+  overflow: hidden;
+}
+/* Material draws the divider as a left border on every segment but the first. With the
+   segments separated it becomes a stray line down the inside of each pill. */
+.mat-button-toggle + .mat-button-toggle { border-left: 1px solid var(--ss-line) !important; }
+
+.mat-button-toggle:hover { border-color: var(--ss-line-strong) !important; }
+
+.mat-button-toggle-checked {
+  background: var(--ss-brand-wash);
+  border-color: var(--ss-brand) !important;
+  color: var(--ss-brand-strong);
+}
+.mat-button-toggle-checked .mat-button-toggle-label-content { font-weight: 700; }
+
+.mat-button-toggle .mat-button-toggle-label-content {
+  padding: 0 var(--ss-space-4);
+  font-size: var(--ss-text-sm);
+}
+
+/* The count a few of these carry, matched to the pill it sits in. */
+.mat-button-toggle .count {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px;
+  margin-left: 6px; padding: 0 5px; border-radius: var(--ss-radius-pill);
+  background: var(--ss-surface-2); color: var(--ss-ink-muted);
+  font-size: 11px; font-weight: 700;
+}
+.mat-button-toggle-checked .count {
+  background: var(--ss-brand); color: var(--ss-ink-inverse);
+}
+
+/*
+ * A section heading with a quiet explanation beside it. Seven screens had each written their
+ * own copy of this, so a heading rendered inside a child component — which inherits none of
+ * them — came out at the browser's own h2 size with its subtitle just as loud.
+ */
+.section-title {
+  display: flex; align-items: baseline; gap: var(--ss-space-3); flex-wrap: wrap;
+  /* Was the same size as the body text beneath it, which is why sections ran together. */
+  font-size: var(--ss-text-lg); font-weight: 700; letter-spacing: -.01em;
+  margin: var(--ss-space-8) 0 var(--ss-space-3);
+  padding-left: var(--ss-space-3);
+  position: relative;
+}
+/* A short coloured bar instead of a bullet. Cheap, and it turns a wall of grey headings
+   into something the eye can index down the page. */
+.section-title::before {
+  content: ''; position: absolute; left: 0; top: .15em; bottom: .15em;
+  width: 3px; border-radius: 2px;
+  background: var(--ss-section-accent, var(--ss-brand));
+}
+.section-title .ss-faint { font-size: var(--ss-text-sm); font-weight: 400; }
+
+/*
+ * A callout: one line the reader has to act on, coloured by its consequence rather than by
+ * decoration. Amber is "somebody has to do something"; red is "money or material is at
+ * stake". Lives here because five screens were each carrying their own copy of it.
+ */
+.ss-callout {
+  display: flex; align-items: center; gap: var(--ss-space-3); flex-wrap: wrap;
+  padding: var(--ss-space-3) var(--ss-space-4);
+  border: 1px solid currentcolor; border-radius: var(--ss-radius-card);
+  font-size: var(--ss-text-sm); font-weight: 600;
+}
+.ss-callout > span { flex: 1 1 220px; }
+
+/* A menu item that carries a second line: what it does, or why it cannot, under its name. */
+.mat-mdc-menu-item small {
+  display: block; font-size: var(--ss-text-xs); color: var(--ss-ink-faint);
+  white-space: normal; max-width: 320px; line-height: 1.35;
+}
+.mat-mdc-menu-item:has(small) .mat-mdc-menu-item-text { white-space: normal; }
+.ss-callout-warn { background: var(--ss-pending-wash); color: var(--ss-pending); }
+.ss-callout-bad  { background: var(--ss-rejected-wash); color: var(--ss-rejected); }
+
+/* The quiet counterpart: something already settled, stated once and not shouted. */
+.ss-settled {
+  display: flex; align-items: center; gap: var(--ss-space-2);
+  padding: var(--ss-space-2) var(--ss-space-4);
+  font-size: var(--ss-text-sm); font-weight: 600; color: var(--ss-approved);
+}
+
+/* Material's snackbar defaults to a near-black surface. A toast is the one thing that may
+   legitimately invert — it is a transient overlay, not a theme — but it still has to come
+   from our palette, and the meaning has to match the status vocabulary.
+
+   Note the selectors: panelClass lands on the overlay *pane*, which is an ancestor of
+   .mat-mdc-snack-bar-container, so a compound selector never matches. Custom properties
+   inherit, so setting them on the pane reaches the container. */
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--ss-ink);
+  --mdc-snackbar-supporting-text-color: var(--ss-ink-inverse);
+  --mat-snack-bar-button-color: var(--ss-ink-inverse);
+}
+.ss-toast-success { --mdc-snackbar-container-color: var(--ss-approved); }
+.ss-toast-error   { --mdc-snackbar-container-color: var(--ss-rejected); }
+.ss-toast-info    { --mdc-snackbar-container-color: var(--ss-brand); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* A document page — a purchase order, a challan — prints as the document alone. The
+   navigation, the top bar and the page ground belong to the screen, not to the copy that
+   goes to the supplier. The page marks the body; this strips everything around it. */
+/*
+ * A document page shown inside a frame — the side-by-side viewer — is the sheet and nothing
+ * else. Same stripping as printing, but on screen, because a pane wrapped in a second copy
+ * of the navigation is not a comparison, it is a joke.
+ */
+body.ss-embedded {
+  mat-sidenav,
+  mat-toolbar.bar,
+  .mat-drawer-backdrop { display: none !important; }
+
+  .mat-drawer-container,
+  .mat-drawer-content {
+    background: #fff !important;
+    overflow: visible !important;
+    height: auto !important;
+    margin: 0 !important;
+  }
+
+  /* Auto on the sides, not zero: the sheet still has to sit in the middle of its frame. */
+  .ss-page, .sheet { margin: 0 auto !important; }
+
+  /* The sheet's own screen controls belong to the page it was opened from, not to a pane. */
+  .no-print { display: none !important; }
+}
+
+@media print {
+  body.ss-printing {
+    mat-sidenav,
+    mat-toolbar.bar,
+    .mat-drawer-backdrop { display: none !important; }
+
+    .mat-drawer-container,
+    .mat-drawer-content {
+      background: #fff !important;
+      overflow: visible !important;
+      height: auto !important;
+      margin: 0 !important;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Dialogs
+ *
+ * One chrome for every popup in the app, applied through MAT_DIALOG_DEFAULT_OPTIONS
+ * rather than by each dialog, so a new one cannot arrive looking like a different
+ * application. A brand band carries the title and the close control; the body stays
+ * white so the form inside is the thing you read.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.ss-dialog {
+  /*
+   * Material owns the title's colour and padding through its own tokens, and its rules land
+   * later in the cascade than ours — set the tokens rather than trying to out-specify them,
+   * or the heading renders dark-on-dark with no left padding.
+   */
+  --mat-dialog-subhead-color: #fff;
+
+  /*
+   * ── the dialog's spacing, stated once ──────────────────────────────────────
+   *
+   *   16px  the gutter. Every band, the content and the actions share it, so the
+   *         title, the first field and the buttons all stand on one left edge.
+   *   12px  between one field and the next inside a section.
+   *   20px  above a section heading (12 + the heading's own 8), so a new section
+   *         reads as a step rather than another row.
+   *    8px  from a heading down to its rule.
+   *
+   * Nothing here picks a number on its own; they all come off the 4px scale, and
+   * the two vertical steps (12 and 20) are far enough apart to be legible.
+   */
+  --ss-dialog-gutter: var(--ss-space-4);
+  --ss-dialog-gap: var(--ss-space-3);
+
+  --mat-dialog-headline-padding: var(--ss-space-3) var(--ss-dialog-gutter);
+  --mat-dialog-content-padding: var(--ss-dialog-gutter);
+  /*
+   * Material swaps to a second token the moment a dialog has an actions row, and its default
+   * is `0 24px` — no top padding and a wider gutter. Left unset, the title stands on 16 and
+   * the first field on 24, which is the eight pixels that make a form look untidy.
+   */
+  --mat-dialog-with-actions-content-padding: var(--ss-dialog-gutter);
+
+  --mat-dialog-actions-padding: var(--ss-space-3) var(--ss-dialog-gutter);
+
+  /* Room for a form of this size to stand without a scrollbar. */
+  --mat-dialog-container-max-height: 82vh;
+
+  .mat-mdc-dialog-surface {
+    border-radius: var(--ss-radius-card);
+    /* The band's corners have to be cut by the surface, or they square off over it. */
+    overflow: hidden;
+    box-shadow: 0 24px 60px -12px rgb(8 52 58 / 0.35), 0 4px 12px rgb(8 52 58 / 0.12);
+  }
+
+  .mat-mdc-dialog-title {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ss-space-4);
+    margin: 0;
+    min-height: 52px;
+    box-sizing: border-box;
+    background: linear-gradient(115deg, var(--ss-brand-deep) 0%, var(--ss-brand) 62%, #14818a 100%);
+    color: #fff;
+    font-size: var(--ss-text-md);
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+
+    /* Material reserves a pseudo-element here for its own baseline spacing. */
+    &::before { display: none; }
+
+    /* A hairline of the bright teal, the same accent the navigation rail uses. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--ss-brand-bright) 0%, transparent 70%);
+    }
+
+    > span { min-width: 0; overflow-wrap: anywhere; }
+  }
+
+  .ss-dialog-x {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 0.28);
+    border-radius: var(--ss-radius-control);
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+
+    &:hover { background: rgb(255 255 255 / 0.24); border-color: rgb(255 255 255 / 0.5); }
+    &:focus-visible { outline: 2px solid var(--ss-brand-bright); outline-offset: 2px; }
+  }
+
+  .mat-mdc-dialog-content { color: var(--ss-ink); }
+
+  /*
+   * Material zeroes the content's top padding whenever a title sits directly above it —
+   *   .mat-mdc-dialog-container .mat-mdc-dialog-title + .mat-mdc-dialog-content
+   * — which is the same specificity as anything shorter of ours and lands later, so it wins.
+   * Match its shape with one class more and the first field gets its gutter back.
+   */
+  .mat-mdc-dialog-container .mat-mdc-dialog-title + .mat-mdc-dialog-content {
+    padding-top: var(--ss-dialog-gutter);
+  }
+
+  /* The form's own rhythm, so a dialog does not have to restate it. */
+  .ss-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-dialog-gap);
+  }
+
+  .mat-mdc-dialog-actions {
+    gap: var(--ss-space-2);
+    border-top: 1px solid var(--ss-line);
+    background: var(--ss-surface-2);
+    min-height: 0;
+  }
+  .mat-mdc-dialog-actions button,
+  .mat-mdc-dialog-actions a { min-height: var(--ss-touch-target); }
+
+  /*
+   * Form fields inside a dialog sit on a shared top line. Without this a field whose hint
+   * wraps to two lines stretches its neighbour's box to match, and the row goes crooked —
+   * which is what "the popup looks basic" actually looks like up close.
+   *
+   * Every paired row splits down the middle, always. Mixing 4/8 with 6/6 and 8/4 down one
+   * form means no two rows share a seam, and the eye reads that as nothing being lined up
+   * even when every individual box is where it was asked to be.
+   */
+  .mat-mdc-form-field { width: 100%; }
+  .ss-dialog-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--ss-dialog-gap);
+    align-items: start;
+  }
+  .ss-dialog-row .wide { grid-column: 1 / -1; }
+  @media (max-width: 600px) {
+    .ss-dialog-row { grid-template-columns: 1fr; }
+  }
+
+  /* A leading icon names the field at a glance, before anyone reads the label. */
+  .mat-mdc-form-field-icon-prefix > mat-icon {
+    padding: 0 var(--ss-space-2) 0 var(--ss-space-3);
+    color: var(--ss-ink-faint);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Enough width that the confirming action reads as the way forward. */
+  .mat-mdc-dialog-actions .mdc-button--unelevated { min-width: 150px; }
+
+  /* A small caption over a rule, to break a long form into things you can scan. */
+  .ss-dialog-legend {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ss-space-2);
+    flex-wrap: wrap;
+    /* The extra 8 on top of the form's 12 is what makes a new section read as a step. */
+    margin: var(--ss-space-2) 0 0;
+    padding-bottom: var(--ss-space-2);
+    border-bottom: 1px solid var(--ss-line);
+    font-size: var(--ss-text-xs);
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ss-brand-strong);
+
+    span {
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--ss-ink-faint);
+    }
+  }
+
+  /* The first heading is already against the content's top gutter. */
+  .ss-dialog-form > .ss-dialog-legend:first-child { margin-top: 0; }
+}

@@ -1,0 +1,200 @@
+/*
+  SiteStock design tokens.
+
+  One light theme. There is deliberately no dark palette and no toggle — the highest-volume
+  user works on a phone outdoors at midday, where a dark interface reads worse, and a second
+  palette is a second thing to keep correct on every screen for no gain.
+
+  Nothing here is pure black or pure white in a large area: true black on true white glares
+  on a cheap phone panel in sunlight. Ink is a deep slate at roughly 12:1 on the surface.
+
+  No feature file may write a literal colour. Everything comes from here.
+*/
+
+:root {
+  color-scheme: light;
+
+  /* ── foundation ──────────────────────────────────────────────────
+     A cool blue-grey scale rather than the green-grey one this started with. The difference
+     is not decoration: a neutral that leans blue reads as "software", and a neutral that
+     leans green reads as "spreadsheet", and the whole product was sitting on the second. */
+  --ss-ground: #f5f8fa;
+  --ss-surface: #ffffff;
+  --ss-surface-2: #f1f1f4;
+  --ss-surface-3: #dbdfe9;
+  --ss-line: #dbdfe9;
+  --ss-line-strong: #c4cada;
+
+  /* The full scale, so a component can reach for a step instead of inventing one. */
+  --ss-g100: #f9f9f9;
+  --ss-g200: #f1f1f4;
+  --ss-g300: #dbdfe9;
+  --ss-g400: #c4cada;
+  --ss-g500: #99a1b7;
+  --ss-g600: #78829d;
+  --ss-g700: #4b5675;
+  --ss-g800: #252f4a;
+
+  --ss-ink: #071437;
+  --ss-ink-muted: #78829d;
+  --ss-ink-faint: #99a1b7;
+  --ss-ink-inverse: #ffffff;
+
+  /* ── action ─────────────────────────────────────────────────────
+     Deep teal. Chosen because it is the one hue the status vocabulary below does not
+     already own: amber, green, red and purple all mean something specific, so a brand
+     built from any of them would make every button look like a verdict. */
+  --ss-brand-deep: #1e1e2d;    /* the navigation rail */
+  --ss-brand-deeper: #1a1a27;  /* its header block */
+  --ss-brand-strong: #056ee9;
+  --ss-brand: #1b84ff;
+  --ss-brand-soft: #b9d9ff;
+  --ss-brand-wash: #e9f3ff;
+  --ss-brand-bright: #56a8ff;  /* only on the dark rail, never on white */
+
+  /* ── the navigation rail ────────────────────────────────────────
+     The one place in the app that is not a light surface. It is chrome, not content:
+     nothing is ever read there for longer than it takes to aim at it. */
+  --ss-nav-bg: var(--ss-brand-deep);
+  --ss-nav-bg-head: var(--ss-brand-deeper);
+  --ss-nav-ink: #9d9da6;
+  --ss-nav-icon: #6d6d80;
+  --ss-nav-ink-strong: #ffffff;
+  --ss-nav-hover: #2a2a3c;
+  --ss-nav-active: #2a2a3c;
+  --ss-nav-line: rgb(255 255 255 / 5%);
+
+  /* ── status vocabulary ──────────────────────────────────────────
+     Fixed meanings, used identically on every screen. A status is never
+     communicated by colour alone — the chip always carries an icon and a word. */
+  --ss-draft: #4b5675;         --ss-draft-wash: #f1f1f4;
+  --ss-pending: #a67800;       --ss-pending-wash: #fff8dd;
+  --ss-approved: #12a047;      --ss-approved-wash: #dfffea;
+  --ss-rejected: #f8285a;      --ss-rejected-wash: #ffeef3;
+  --ss-variance: #7239ea;      --ss-variance-wash: #f8f5ff;
+  --ss-info: #1b84ff;          --ss-info-wash: #e9f3ff;
+  /* Finished and filed — no longer moving, and not the same news as "arrived". */
+  --ss-settled: #4b5675;       --ss-settled-wash: #eef0f5;
+  /* Called off. Grey like a draft, but warm rather than cool, and struck through. */
+  --ss-cancelled: #78829d;     --ss-cancelled-wash: #f1f1f4;
+
+  /* ── tile washes ────────────────────────────────────────────────
+     Deeper than the status washes, and for a different reason. A status wash sits inside a
+     white chip on a white card, so it only has to clear white. A tile sits on the page
+     itself, and the page is no longer white — reusing the status washes put a #e8f2f2 tile
+     on an #eff3f4 ground, a difference of seven, one and two. It was measurably there and
+     completely invisible. These clear both. */
+  --ss-tile-buying: #e9f3ff;
+  --ss-tile-material: #f3edff;
+  --ss-tile-records: #f1f1f4;
+  --ss-tile-reading: #dfffea;
+  --ss-tile-pending: #fff8dd;
+  --ss-tile-bad: #ffeef3;
+  --ss-tile-quiet: #f1f1f4;
+
+  /* ── chart palette ──────────────────────────────────────────────
+     A fixed order, so the same site or the same category keeps its colour between one
+     chart and the next. Drawn from the brand and the status vocabulary rather than a
+     stock palette, so a chart never introduces a colour the rest of the app never uses. */
+  --ss-chart-1: #1b84ff;   --ss-chart-1-soft: #b9d9ff;
+  --ss-chart-2: #17c653;   --ss-chart-2-soft: #b4eec8;
+  --ss-chart-3: #f6b100;   --ss-chart-3-soft: #fbe3a1;
+  --ss-chart-4: #7239ea;   --ss-chart-4-soft: #d4c2f8;
+  --ss-chart-5: #f8285a;   --ss-chart-5-soft: #fbc0cf;
+  --ss-chart-6: #056ee9;   --ss-chart-6-soft: #aecdf5;
+
+  /* ── role vocabulary ────────────────────────────────────────────
+     Who someone is, which is a different question from how something is going. Role pills
+     are outlined with a coloured dot; status chips are filled with an icon and a word. The
+     shapes differ deliberately, so a green role can never be misread as "approved". */
+  --ss-role-owner: #7239ea;
+  --ss-role-purchase: #1b84ff;
+  --ss-role-supervisor: #056ee9;
+  --ss-role-finance: #12a047;
+  --ss-role-admin: #a67800;
+  --ss-role-none: #78829d;
+
+  /* ── the four families ──────────────────────────────────────────
+     Money out, materials, the master lists, and reading it all back. The home screen is the
+     only place all four appear together, and grouping them by colour is what makes it a map
+     rather than a wall of tiles. */
+  --ss-family-buying: #1b84ff;
+  --ss-family-material: #7239ea;
+  --ss-family-records: #78829d;
+  --ss-family-reading: #12a047;
+
+  /* ── identity colours ───────────────────────────────────────────
+     For avatars. Picked from a name so the same person is the same colour on every screen,
+     which is what makes a wall of initials scannable at all. Six hues, each dark enough to
+     carry white text. */
+  --ss-id-1: #1b84ff;
+  --ss-id-2: #7239ea;
+  --ss-id-3: #12a047;
+  --ss-id-4: #f6b100;
+  --ss-id-5: #f8285a;
+  --ss-id-6: #4b5675;
+
+  /* ── spacing: 4px base, and nothing between the steps ───────── */
+  --ss-space-1: 4px;
+  --ss-space-2: 8px;
+  --ss-space-3: 12px;
+  --ss-space-4: 16px;
+  --ss-space-6: 24px;
+  --ss-space-8: 32px;
+  --ss-space-12: 48px;
+
+  /* ── shape ──────────────────────────────────────────────────────
+     Softer than it was. A 10px card with a hard 1px border reads as a box drawn on a page;
+     a 14px card with a real shadow reads as a card resting on it. Same information, and
+     the second one is the difference between "a form" and "a product". */
+  --ss-radius-control: 6px;
+  --ss-radius-card: 12px;
+  --ss-radius-tile: 8px;
+  --ss-radius-pill: 999px;
+
+  /* ── elevation ──────────────────────────────────────────────────
+     Was one nearly-invisible shadow, with a border doing all the separating — which is why
+     every screen looked like a wireframe. Layered now: a tight contact shadow that grounds
+     the card, over a wide soft one that lifts it. Tinted with the ink hue rather than
+     neutral grey, so a shadow never looks like dirt on the page. */
+  --ss-elevation: 0 3px 4px 0 rgb(0 0 0 / 3%);
+  --ss-elevation-raised: 0 10px 30px 0 rgb(7 20 55 / 12%);
+  --ss-elevation-hover: 0 6px 16px 0 rgb(7 20 55 / 8%);
+
+  /* A hairline for the rare card that still needs one — inside another card, or against a
+     white background where a shadow alone has nothing to fall on. */
+  --ss-hairline: var(--ss-g200);
+
+  /* ── type ───────────────────────────────────────────────────── */
+  --ss-font: 'Inter', 'Noto Sans Devanagari', -apple-system, 'Segoe UI', sans-serif;
+  --ss-font-mono: 'Roboto Mono', ui-monospace, 'SF Mono', monospace;
+
+  --ss-text-xs: 12px;
+  --ss-text-sm: 13px;
+  --ss-text-md: 15px;   /* desk density */
+  --ss-text-lg: 17px;   /* field density */
+  --ss-text-xl: 20px;
+  --ss-text-2xl: 26px;
+  --ss-text-3xl: 32px;
+
+  /* ── density ─────────────────────────────────────────────────
+     Chosen once on the app shell by breakpoint, never per screen. */
+  --ss-row-height: 44px;
+  --ss-touch-target: 44px;
+  --ss-body-size: var(--ss-text-md);
+}
+
+/* Field density. A thumb, sometimes a glove, always in a hurry. */
+:root.ss-density-field {
+  --ss-row-height: 56px;
+  --ss-touch-target: 48px;
+  --ss-body-size: var(--ss-text-lg);
+}
+
+/* Desk density — the purchase and finance tables, where scanning many rows matters more
+   than reach. */
+:root.ss-density-desk {
+  --ss-row-height: 40px;
+  --ss-touch-target: 36px;
+  --ss-body-size: var(--ss-text-md);
+}

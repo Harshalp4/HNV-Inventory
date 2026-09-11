@@ -1,0 +1,26 @@
+# Local development only. Staging and production Postgres is Azure Database for
+# PostgreSQL Flexible Server, described in Bicep — nothing here is deployed.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sitestock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sitestock
+      POSTGRES_USER: sitestock
+      POSTGRES_PASSWORD: sitestock
+      # Matches the Azure Flexible Server default so sort order does not differ
+      # between a developer's machine and production.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - sitestock-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sitestock -d sitestock"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  sitestock-pgdata:

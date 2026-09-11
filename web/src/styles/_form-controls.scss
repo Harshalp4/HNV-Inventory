@@ -1,0 +1,175 @@
+/*
+  Plain form controls, owned by us.
+
+  Material's form field brought a notched outline, a floating label, a density scale, a
+  reserved subscript line and a flex wrapper that absorbed its row's height — five separate
+  mechanisms, each of which had to be fought with `!important` to get a bordered box with a
+  label above it. Every field bug this project has hit came out of one of them.
+
+  This is that bordered box, written directly. A label, a control, a hint. No runtime, no
+  overlay, no notch, and nothing to override.
+
+    <div class="ss-field">
+      <label for="x">Work order number</label>
+      <input id="x" class="ss-control" />
+      <p class="ss-hint">Exactly as they issued it.</p>
+    </div>
+*/
+
+.ss-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ss-field > label {
+  font-size: var(--ss-text-sm);
+  font-weight: 600;
+  color: var(--ss-ink-muted);
+  letter-spacing: .01em;
+}
+
+/* A required field says so where the label is read, not in a tooltip. */
+.ss-field > label .req { color: var(--ss-rejected); margin-left: 2px; }
+
+.ss-control {
+  width: 100%;
+  min-height: 36px;
+  /*
+    A control never gives up its own height. The field is a flex column inside a grid row,
+    and without this the row squeezes the box below its minimum — 36px asked for, 29px
+    drawn — because a flex item shrinks before its min-height is consulted.
+  */
+  flex: none;
+  padding: 7px var(--ss-space-4);
+  /*
+    Filled, not outlined. An outlined white box on a white card has to draw its own border to
+    exist at all, which is why a form of them reads as a stack of empty rectangles. A soft
+    grey fill with no visible border reads as a place to type, and the page keeps its calm —
+    the border only appears on focus, where it means something.
+  */
+  border: 1px solid transparent;
+  border-radius: var(--ss-radius-control);
+  background: var(--ss-g100);
+  color: var(--ss-ink);
+  font: inherit;
+  font-size: var(--ss-text-sm);
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+
+/*
+ * Autofill.
+ *
+ * Chrome paints an autofilled box #e8f0fe — a pale blue nothing else in the app uses — and
+ * it cannot be overridden with `background`, because the colour is applied by the engine
+ * outside the cascade. An inset shadow the full height of the control is the one thing that
+ * paints over it, and the text colour has to be set through `-webkit-text-fill-color` for
+ * the same reason. Without this, every saved-password form in the app renders in a colour
+ * nobody chose, starting with the first screen anyone sees.
+ */
+.ss-control:-webkit-autofill,
+.ss-control:-webkit-autofill:hover,
+.ss-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ss-ink);
+  -webkit-box-shadow: inset 0 0 0 100px var(--ss-g100);
+  caret-color: var(--ss-ink);
+  /* The engine also runs a fade-in that repaints its own colour; outrunning it is the
+     conventional fix and costs nothing. */
+  transition: background-color 100000s ease-in-out 0s;
+}
+.ss-control:-webkit-autofill:focus {
+  -webkit-box-shadow: inset 0 0 0 100px var(--ss-g200), 0 0 0 .2rem rgb(27 132 255 / 20%);
+}
+
+.ss-control:hover:not(:disabled):not([readonly]) { background: var(--ss-g200); }
+
+.ss-control:focus {
+  outline: none;
+  background: var(--ss-g200);
+  border-color: var(--ss-g300);
+  box-shadow: 0 0 0 .2rem rgb(27 132 255 / 20%);
+}
+
+.ss-control:disabled,
+.ss-control[readonly] { background: var(--ss-surface-2); color: var(--ss-ink-muted); }
+
+.ss-control::placeholder { color: var(--ss-ink-faint); }
+
+textarea.ss-control { min-height: 62px; resize: vertical; line-height: 1.45; }
+
+/* Native select, so a phone gets its own wheel rather than a floating panel. */
+select.ss-control {
+  appearance: none;
+  padding-right: var(--ss-space-8);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236b7780'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--ss-space-3) center;
+  background-size: 16px;
+}
+
+/* Native date input: the platform's own picker, and no 20kB of calendar. */
+input[type="date"].ss-control { min-height: 36px; }
+
+.ss-hint {
+  margin: 0;
+  font-size: var(--ss-text-xs);
+  line-height: 1.3;
+  color: var(--ss-ink-faint);
+}
+
+.ss-error {
+  margin: 0;
+  font-size: var(--ss-text-xs);
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--ss-rejected);
+}
+
+.ss-field.invalid > .ss-control,
+.ss-control.invalid { border-color: var(--ss-rejected); }
+.ss-field.invalid > label { color: var(--ss-rejected); }
+
+/*
+  A unit or a currency symbol sitting against the control. The box draws the border and the
+  control inside it draws none, so the two read as one field however wide the symbol is.
+*/
+.ss-control-group {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--ss-line);
+  border-radius: var(--ss-radius-control);
+  background: var(--ss-surface);
+  overflow: hidden;
+}
+.ss-control-group:focus-within {
+  background: var(--ss-g200);
+  border-color: var(--ss-g300);
+  box-shadow: 0 0 0 .2rem rgb(27 132 255 / 20%);
+}
+.ss-control-group .ss-control {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1;
+  min-width: 0;
+}
+.ss-control-group .affix {
+  display: grid;
+  place-items: center;
+  padding: 0 var(--ss-space-3);
+  background: var(--ss-surface-2);
+  color: var(--ss-ink-muted);
+  font-size: var(--ss-text-sm);
+  white-space: nowrap;
+}
+
+/* Rows of fields. The common shapes, so a form does not invent its own grid each time. */
+.ss-fields { display: grid; gap: var(--ss-space-3); }
+.ss-fields.two { grid-template-columns: 1fr 1fr; }
+.ss-fields.three { grid-template-columns: 1fr 1fr 1fr; }
+.ss-fields .span-2 { grid-column: span 2; }
+@media (max-width: 620px) {
+  .ss-fields.two, .ss-fields.three { grid-template-columns: 1fr; }
+  .ss-fields .span-2 { grid-column: auto; }
+}

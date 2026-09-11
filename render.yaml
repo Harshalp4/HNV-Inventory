@@ -1,0 +1,99 @@
+# SiteStock on Render.
+#
+# One web service and one database. The web service serves both the API and the Angular
+# app from the same origin, because every request the browser makes is a relative /api
+# path — see the note at the top of the Dockerfile.
+#
+# Apply this with Render's "Blueprint" flow. Everything here is created for you except the
+# two values marked sync:false, which Render will ask for on the first deploy.
+
+databases:
+  - name: sitestock-db
+    databaseName: sitestock
+    user: sitestock
+    # Free while this is a trial. Two things to know: Render deletes a free database a set
+    # period after it is created, and it cannot be resized — moving to a paid plan later is
+    # a dump and restore, not a switch. Take a backup before that date arrives.
+    plan: free
+    postgresMajorVersion: "17"
+
+services:
+  - type: web
+    name: sitestock
+    runtime: docker
+    # Free: sleeps after about fifteen minutes with no traffic, and the next request waits
+    # roughly a minute while it wakes. Fine for a trial, wrong for a supervisor standing at
+    # a gate with a lorry — that is the reason to move to starter before real site use.
+    plan: free
+    region: singapore          # The closest Render region to Kalyan; ~50ms, not ~250ms.
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+
+    # NOTE — no disk, because Render does not offer one on a free instance.
+    #
+    # That has a consequence worth being explicit about: uploaded challans, delivery photos
+    # and test certificates are written to the container filesystem, which is replaced on
+    # every deploy and every wake from sleep. The upload succeeds, the photo is visible, and
+    # then one day it is not. Acceptable while this is a trial with throwaway data; not
+    # acceptable the moment a real delivery is being evidenced.
+    #
+    # Two ways out when that day comes: move to a paid instance and re-add the disk block
+    # below, or point Settings → Storage at Azure Blob, which the app already supports.
+    #
+    # disk:
+    #   name: sitestock-documents
+    #   mountPath: /data
+    #   sizeGB: 5
+
+    envVars:
+      # Render composes the connection string for the database above. The API reads
+      # ConnectionStrings:Postgres, and __ is how .NET spells : in an environment variable.
+      - key: ConnectionStrings__Postgres
+        fromDatabase:
+          name: sitestock-db
+          property: connectionString
+
+      # Signs every access token. Generated once by Render and never seen by anyone —
+      # a key somebody has read is a key somebody can mint an owner's token with.
+      - key: Jwt__SigningKey
+        generateValue: true
+
+      # The schema is applied by the API as it starts. With one instance this is the
+      # simplest correct thing; if this ever runs more than one container, migrations move
+      # to a release command so two instances cannot race each other.
+      - key: Database__MigrateOnStartup
+        value: "true"
+
+      # Deliberately off. Seeding creates demo users with a published password, which is
+      # exactly what must not exist on a machine reachable from the internet.
+      - key: Database__SeedOnStartup
+        value: "false"
+
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+      # Same origin, so the browser never makes a cross-origin call. Kept pointing at the
+      # site's own URL rather than "*" so a stray absolute call fails loudly instead of
+      # quietly working from anywhere.
+      - key: Cors__Origins__0
+        fromService:
+          type: web
+          name: sitestock
+          property: host
+
+      # Where uploads land. On a free instance this is ordinary container storage and does
+      # not survive a restart — see the note above. It becomes durable the moment a disk is
+      # mounted at /data.
+      - key: Storage__LocalPath
+        value: /data/documents
+
+      # The first owner account, created on first start so there is a way in that is not
+      # a seeded demo user. Render asks for these once; they are not stored in the repo.
+      - key: Bootstrap__OwnerEmail
+        sync: false
+      - key: Bootstrap__OwnerPassword
+        sync: false
+      - key: Bootstrap__OwnerName
+        sync: false
